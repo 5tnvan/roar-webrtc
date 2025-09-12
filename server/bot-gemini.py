@@ -310,15 +310,31 @@ async def create_room_and_token():
         token = await daily_helper.get_token(room.url, expiry_time=3600)
         return room.url, token
 
+# -------------------------
+# Start Session Endpoint
+# -------------------------
 @app.post("/api/start")
 async def start_session(request: Request):
     body = await request.json()
     preferred_lang = body.get("preferred_language", "en-US")
     gemini_key = body.get("gemini_api_key")
 
+    # Create room and token
     room_url, token = await create_room_and_token()
 
-    # Start bot session asynchronously
+    # Immediately return credentials to frontend
+    response = {"url": room_url, "token": token}
+
+    # Start bot in background
+    asyncio.create_task(start_bot(room_url, token, preferred_lang, gemini_key))
+
+    return response
+
+
+# -------------------------
+# Background Bot Starter
+# -------------------------
+async def start_bot(room_url: str, token: str, preferred_lang: str, gemini_key: str):
     transport = DailyTransport(
         room_url=room_url,
         token=token,
@@ -332,16 +348,36 @@ async def start_session(request: Request):
         )
     )
 
-    asyncio.create_task(run_bot(
-    transport,
-    MASTER_GUIDE_SYSTEM_INSTRUCTION,  # system instruction
-    voice_id="Aoede",                 # voice ID
-    message_handler=handle_json_message,
-    preferred_lang=preferred_lang,
-    gemini_key=gemini_key
-))
+    await run_bot(
+        transport=transport,
+        system_instruction=MASTER_GUIDE_SYSTEM_INSTRUCTION,
+        voice_id="Aoede",
+        message_handler=handle_json_message,
+        preferred_lang=preferred_lang,
+        gemini_key=gemini_key
+    )
 
-    return {"url": room_url, "token": token}
+    transport = DailyTransport(
+        room_url=room_url,
+        token=token,
+        bot_name="Pipecat Bot",
+        params=DailyParams(
+            audio_in_enabled=True,
+            audio_out_enabled=True,
+            audio_out_mixer=mixer,
+            transcription_enabled=False,
+            vad_analyzer=SileroVADAnalyzer()
+        )
+    )
+
+    await run_bot(
+        transport,
+        MASTER_GUIDE_SYSTEM_INSTRUCTION,
+        voice_id="Aoede",
+        message_handler=handle_json_message,
+        preferred_lang=preferred_lang,
+        gemini_key=gemini_key
+    )
 
 # -------------------------
 # Run FastAPI server

@@ -56,7 +56,7 @@ from pipecat.audio.mixers.soundfile_mixer import SoundfileMixer
 load_dotenv(override=True)
 
 CAFE_SOUND_FILE = os.path.join(
-    os.path.dirname(__file__), "assets", "cafe-24-mono.mp3"
+    os.path.dirname(__file__), "assets", "cafe.mp3"
 )
 
 # -------------------------
@@ -331,7 +331,7 @@ async def start_session(request: Request):
     gemini_key=gemini_key
 ))
 
-    return {"url": room_url, "token": token}
+    return {"url": room_url, "token": token, "status_code" : 202}
     
 @app.get("/health")
 def health():
