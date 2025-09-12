@@ -16,7 +16,6 @@ the conversation flow using Gemini's streaming capabilities.
 """
 
 import os
-import uuid
 import asyncio
 import aiohttp
 import time
@@ -26,9 +25,6 @@ from dotenv import load_dotenv
 from loguru import logger
 
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
-
-from PIL import Image
 
 from pipecat.audio.vad.silero import SileroVADAnalyzer
 
@@ -48,14 +44,8 @@ from pipecat.pipeline.runner import PipelineRunner
 
 from pipecat.processors.aggregators.openai_llm_context import OpenAILLMContext
 from pipecat.processors.frameworks.rtvi import RTVIConfig, RTVIObserver, RTVIProcessor
-from pipecat.processors.frame_processor import FrameDirection, FrameProcessor
 
 from pipecat.frames.frames import (
-    BotStartedSpeakingFrame,
-    BotStoppedSpeakingFrame,
-    Frame,
-    OutputImageRawFrame,
-    SpriteFrame,
     LLMMessagesAppendFrame
 )
 
@@ -249,20 +239,20 @@ async def run_bot(transport: BaseTransport, system_instruction: str, voice_id: s
 
     @transport.event_handler("on_client_connected")
     async def on_client_connected(transport, participant):
-        logger.info(f"Client connected")
+        logger.info("Client connected")
         await transport.capture_participant_transcription(participant["id"])
         
 
     @transport.event_handler("on_client_disconnected")
     async def on_client_disconnected(transport, client):
-        logger.info(f"Client disconnected")
+        logger.info("Client disconnected")
         await task.cancel()
 
     runner = PipelineRunner(handle_sigint=False)
     await runner.run(task)
 
 
-async def bot(runner_args: RunnerArguments):
+async def bot(runner_args: RunnerArguments, gemini_key: str):
     
     """Main bot entry point compatible with Pipecat Cloud."""
 
@@ -342,10 +332,29 @@ async def start_session(request: Request):
 ))
 
     return {"url": room_url, "token": token}
+    
+@app.get("/health")
+def health():
+    return "OK"
 
+@app.get("/ready")
+def ready():
+    return "OK"
 # -------------------------
 # Run FastAPI server
 # -------------------------
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=7860)
+
+
+# def run(prompt: str):
+#     print(f"Running on Cerebrium: {prompt}")
+
+#     return {"my_result": prompt}
+
+# To run your app, run:
+# cerebrium run main.py::run --prompt "Hello World!"
+#
+# To deploy your app, run:
+# cerebrium deploy

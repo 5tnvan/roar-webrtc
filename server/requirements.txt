@@ -1,1 +1,3 @@
-pipecat-ai[daily,elevenlabs,openai,silero,google,runner]>=0.0.79
+pipecat-ai[daily,elevenlabs,openai,silero,google,runner,soundfile]>=0.0.79
+pipecatcloud>=0.2.1
+soundfile

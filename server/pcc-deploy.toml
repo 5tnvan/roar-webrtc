@@ -1,0 +1,8 @@
+agent_name = "hey-roar"
+image = "5tnvan/hey-roar:0.1"
+secret_set = "hey-roar-secrets"
+image_credentials = "hey-roar-image-credentials"
+
+[scaling]
+min_agents = 1
+max_agents = 5
